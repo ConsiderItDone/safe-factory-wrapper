@@ -1,0 +1,5 @@
+#import { Module } into Ethereum from "wrap://ens/safe-proxy-factory-wrapper.polywrap.eth"
+
+type Module {
+
+}
