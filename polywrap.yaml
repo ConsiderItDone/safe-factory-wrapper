@@ -8,5 +8,7 @@ source:
   import_abis:
     - uri: wrap://ens/safe-proxy-factory-wrapper.polywrap.eth
       abi: ../safe-proxy-factory-wrapper/src/schema.graphql
+    - uri: wrap://ens/datetime.polywrap.eth
+      abi: ./node_modules/polywrap-datetime-plugin/build/schema.graphql
 extensions:
   build: ./polywrap.build.yaml
