@@ -1,4 +1,9 @@
-import v130l2 from "./V130l2";
+import v130l2 from "./1.3.0/gnosis_safe_l2";
+
+const v100contractNames = ['gnosis_safe'];
+const v111contractNames = ['create_and_add_modules', 'create_call','default_callback_handler', 'gnosis_safe', 'multi_send', 'proxy_factory'];
+const v120contractNames = ['gnosis_safe'];
+const v130contractNames = ['compability_fallback_handler', 'create_call', 'gnosis_safe', 'gnosis_safe_l2', 'multi_send', 'multi_send_call_only', 'proxy_factory', 'simulate_tx_accessor']
 
 function generateMap<K = string, V = string>(values: string[][]): Map<K, V> {
   const map = new Map<K, V>();
