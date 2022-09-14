@@ -1,5 +1,7 @@
 import {
   encodeSetupCallData,
+  getSafeContractAddress,
+  isContractDeployed,
   validateSafeAccountConfig,
   validateSafeDeploymentConfig,
 } from "./utils";
@@ -24,15 +26,21 @@ export function deploySafe(args: Args_deploySafe): string {
   const initializer = encodeSetupCallData(args.safeAccountConfig);
 
   let saltNonce: string = "";
+  let safeContractVersion: string = "";
+
   if (args.safeDeploymentConfig != null) {
     if (args.safeDeploymentConfig!.saltNonce != null) {
       saltNonce = args.safeDeploymentConfig!.saltNonce;
+    }
+    if (args.safeDeploymentConfig!.version != null) {
+      safeContractVersion = args.safeDeploymentConfig!.version!;
     }
   } else {
     const timestamp = Datetime_Module.currentTimestamp({}).unwrap();
     const res = timestamp.mul(1000); //.add(Math.floor(Math.random() * 1000)); // TODO Math.random()
 
     saltNonce = res.toString();
+    safeContractVersion = "1.3.0";
     /* saltNonce = (Date.now() * 1000 + Math.floor(Math.random() * 1000)).toString(); */
   }
 
@@ -62,25 +70,37 @@ export function deploySafe(args: Args_deploySafe): string {
     };
   }
 
+  const chainId = Ethereum_Module.getNetwork({
+    connection: args.connection,
+  }).unwrap().chainId;
+
+  //https://github.com/safe-global/safe-deployments/tree/main/src/assets - contract adressess
+  const safeContractAddress = getSafeContractAddress(
+    safeContractVersion,
+    chainId.toString()
+  );
+
   const safeAddress = Safe_Module.createProxy({
-    safeMasterCopyAddress: signerAddress,
-    address: "",
+    safeMasterCopyAddress: safeContractAddress,
+    address: safeContractAddress,
     connection: connection,
     initializer: initializer,
     saltNonce: <u32>Number.parseInt(saltNonce),
   });
 
+  // https://github.com/safe-global/safe-core-sdk/blob/a0fefbf2f8aed39b17de2cad27f86b46e732d1c3/packages/safe-ethers-lib/src/EthersAdapter.ts#L149
   /*   const isContractDeployed = await this.#ethAdapter.isContractDeployed(
     safeAddress
   ); */
 
-  // const isContractDeployed =
+  const contractDeployed = isContractDeployed("");
 
-  /*   if (!isContractDeployed) {
+  if (!contractDeployed) {
     throw new Error(
       "SafeProxy contract is not deployed on the current network"
     );
-  } */
+  }
+
   /*   const safe = await Safe.create({
     ethAdapter: this.#ethAdapter,
     safeAddress,

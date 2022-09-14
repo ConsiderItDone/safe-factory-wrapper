@@ -7,8 +7,7 @@ type Module {
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
         options: TransactionOptions,
-        connection: Ethereum_Connection,
-        callback: String,
+        connection: Ethereum_Connection
     ): String!
 }
 
@@ -30,6 +29,7 @@ type SafeAccountConfig {
 
 type SafeDeploymentConfig {
     saltNonce: String!
+    version: String
 }
 
 type MetaTransactionData {

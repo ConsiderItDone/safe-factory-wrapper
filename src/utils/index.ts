@@ -1,5 +1,6 @@
 import { SafeAccountConfig, SafeDeploymentConfig, Safe_Module } from "../wrap";
 import { BigInt } from "@polywrap/wasm-as";
+import versionMap from "./contractAddresses";
 
 export const validateSafeAccountConfig = (config: SafeAccountConfig): void => {
   if (config.owners.length <= 0)
@@ -24,9 +25,9 @@ export const validateSafeDeploymentConfig = (
 
 export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
   const args: string[] = [];
-  
+
   args.push(accountConfig.owners.toString());
-  
+
   const threshold = accountConfig.threshold.unwrap();
 
   if (threshold) {
@@ -55,4 +56,30 @@ export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
     method: "setup",
     args: args,
   }).unwrap();
+}
+
+export function getSafeContractAddress(
+  safeVersion: string,
+  chainId: string
+): string {
+  const version = versionMap.get(safeVersion);
+  if (!version) {
+    throw new Error("Version isn't supported");
+  } else {
+    const contractAddress = version.get(chainId);
+    if (!contractAddress) {
+      throw new Error("No contract for provided chainId");
+    } else {
+      return contractAddress;
+    }
+  }
+}
+
+export function isContractDeployed(
+  address: string,
+  //defaultBlock?: string
+): boolean {
+  //const contractCode = this.getContractCode(address, defaultBlock)
+  //return contractCode !== '0x'
+  return true;
 }
