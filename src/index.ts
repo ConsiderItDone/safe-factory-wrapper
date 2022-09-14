@@ -12,6 +12,7 @@ import {
 import {
   Args_deploySafe,
   Args_getChainId,
+  Args_predictSafeAddress,
   Datetime_Module,
   Ethereum_Module,
   Logger_Module,
@@ -152,4 +153,50 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   }
 
   return null;
+}
+
+export function predictSafeAddress(args: Args_predictSafeAddress): bool {
+  validateSafeAccountConfig(args.safeAccountConfig);
+  if (args.safeDeploymentConfig !== null) {
+    validateSafeDeploymentConfig(args.safeDeploymentConfig);
+  }
+
+  // ToDo: заменить заглушку
+  // this.#safeProxyFactoryContract.getAddress()
+  const from = "0x0000000000000000000000000000000000000000";
+  const initializer = encodeSetupCallData(args.safeAccountConfig);
+  const saltNonce = args.safeDeploymentConfig!.saltNonce;
+  const salt = Ethereum_Module.solidityKeccak256({
+    types: ["bytes", "uint256"],
+    values: [
+      Ethereum_Module.solidityKeccak256({
+        types: ["bytes"],
+        values: [initializer],
+      }).unwrap(),
+      saltNonce
+    ]
+  }).unwrap()
+  // ToDo: нужно откуда-то взять адрес прокси
+  const proxyCreationCode = Safe_Module.proxyCreationCode({
+    address: "0x0000000000000000000000000000000000000000",
+    connection: null
+  }).unwrap();
+  const constructorData = Ethereum_Module.encodeParams({
+    types: ["address"],
+    // ToDo: заменить заглушку
+    // this.#gnosisSafeContract.getAddress()
+    values: ["0x0000000000000000000000000000000000000000"]
+  })
+
+  const initCodeHash = Ethereum_Module.solidityKeccak256({
+    types: ["bytes"],
+    values: [proxyCreationCode + constructorData],
+  });
+  const addrHash = Ethereum_Module.solidityKeccak256({
+    types: ["bytes", "address", "bytes32", "bytes32"],
+    values: ["0xff", from, salt, initCodeHash.unwrap()],
+  })
+  const address = addrHash.unwrap().slice(-20);
+  
+  return Ethereum_Module.checkAddress({ address }).unwrap()
 }
