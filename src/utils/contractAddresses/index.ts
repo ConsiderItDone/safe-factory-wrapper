@@ -1,9 +1,15 @@
-import v130l2 from "./1.3.0/gnosis_safe_l2";
+import gnosis_safe_v100 from "./1.0.0/gnosis_safe";
+import gnosis_safe_v111 from "./1.1.1/gnosis_safe";
+import gnosis_safe_v120 from "./1.2.0/gnosis_safe";
+import gnosis_safe_v130 from "./1.3.0/gnosis_safe";
+import gnosis_safe_v130_l2 from "./1.3.0/gnosis_safe_l2";
+import proxy_factory_v111 from "./1.1.1/proxy_factory";
+import proxy_factory_v130 from "./1.3.0/proxy_factory";
+import multi_send_v111 from "./1.1.1/multi_send";
+import multi_send_v130 from "./1.3.0/multi_send";
+import multi_send_call_only_v130 from "./1.3.0/multi_send_call_only";
 
-const v100contractNames = ['gnosis_safe'];
-const v111contractNames = ['create_and_add_modules', 'create_call','default_callback_handler', 'gnosis_safe', 'multi_send', 'proxy_factory'];
-const v120contractNames = ['gnosis_safe'];
-const v130contractNames = ['compability_fallback_handler', 'create_call', 'gnosis_safe', 'gnosis_safe_l2', 'multi_send', 'multi_send_call_only', 'proxy_factory', 'simulate_tx_accessor']
+//https://github.com/safe-global/safe-deployments/tree/main/src/assets - contract adressess
 
 function generateMap<K = string, V = string>(values: string[][]): Map<K, V> {
   const map = new Map<K, V>();
@@ -16,17 +22,54 @@ function generateMap<K = string, V = string>(values: string[][]): Map<K, V> {
   return map;
 }
 
-const V130l2 = generateMap<string, string>(v130l2);
-
-type VersionMap = Map<string, Map<string, string>>;
-
-function getVersionMap(): VersionMap {
-  const map = new Map<string, Map<string, string>>();
-  map.set("1.3.0", V130l2);
-  map.set("1.3.0l2", V130l2);
-  return map;
+export function getSafeContractMap(
+  version: string,
+  isL2: boolean = false
+): Map<string, string> {
+  if (version === "1.3.0") {
+    if (isL2) {
+      return generateMap(gnosis_safe_v130_l2);
+    } else {
+      return generateMap(gnosis_safe_v130);
+    }
+  } else if (version === "1.2.0") {
+    return generateMap(gnosis_safe_v120);
+  } else if (version === "1.1.1") {
+    return generateMap(gnosis_safe_v111);
+  } else if (version === "1.0.0") {
+    return generateMap(gnosis_safe_v100);
+  } else {
+    throw new Error("Invalid Safe version");
+  }
 }
 
-const versionMap = getVersionMap();
+export function getSafeFactoryContractMap(
+  version: string
+): Map<string, string> {
+  if (version === "1.3.0") {
+    return generateMap(proxy_factory_v130);
+  } else if (version === "1.2.0" || version === "1.1.1") {
+    return generateMap(proxy_factory_v111);
+  } else {
+    throw new Error("Invalid Safe version");
+  }
+}
 
-export default versionMap;
+export function getMultisendContractMap(version: string): Map<string, string> {
+  if (version === "1.3.0") {
+    return generateMap(multi_send_v130);
+  } else if (version === "1.2.0" || version === "1.1.1") {
+    return generateMap(multi_send_v111);
+  } else {
+    throw new Error("Invalid Safe version");
+  }
+}
+export function getMultisendCallOnlyContractMap(
+  version: string
+): Map<string, string> {
+  if (version === "1.3.0" || version === "1.2.0" || version === "1.1.1") {
+    return generateMap(multi_send_call_only_v130);
+  } else {
+    throw new Error("Invalid Safe version");
+  }
+}

@@ -1,7 +1,8 @@
 import { BigInt } from "@polywrap/wasm-as";
 import {
   encodeSetupCallData,
-  getContractNetworks,
+  getMultiSendCallOnlyContractAddress,
+  getMultiSendContractAddress,
   getSafeContractAddress,
   getSafeFactoryContractAddress,
   isContractDeployed,
@@ -48,20 +49,20 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     const timestamp = Datetime_Module.currentTimestamp({}).unwrap();
     const res = timestamp.mul(1000); //.add(Math.floor(Math.random() * 1000)); // TODO Math.random()
 
-    saltNonce = res.toString();
+    /* saltNonce = (Date.now() * 1000 + Math.floor(Math.random() * 1000)).toString(); */ saltNonce =
+      res.toString();
 
     Logger_Module.log({ level: 0, message: "saltNonce" + saltNonce });
     safeContractVersion = "1.3.0";
-    /* saltNonce = (Date.now() * 1000 + Math.floor(Math.random() * 1000)).toString(); */
   }
 
-  if (args.options != null) {
+  /*   if (args.options != null) {
     if (args.options!.gas && args.options!.gasLimit) {
       throw new Error(
         "Cannot specify gas and gasLimit together in transaction options"
       );
     }
-  }
+  } */
 
   let connection: Safe_Ethereum_Connection | null = null;
   if (args.connection != null) {
@@ -92,11 +93,10 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
 
   Logger_Module.log({ level: 0, message: "chainId: " + chainId.toString() });
 
-  //https://github.com/safe-global/safe-deployments/tree/main/src/assets - contract adressess
-
   const safeContractAddress = getSafeContractAddress(
     safeContractVersion,
-    chainId.toString()
+    chainId.toString(),
+    !isL1Safe
   );
 
   const safeFactoryContractAddress = getSafeFactoryContractAddress(
@@ -139,10 +139,18 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
       return {
         safeAddress: safeAddress!,
         isL1SafeMasterCopy: isL1Safe,
-        contractNetworks: getContractNetworks(
-          safeContractVersion,
-          chainId.toString()
-        ),
+        contractNetworks: {
+          multiSendAddress: getMultiSendContractAddress(
+            safeContractVersion,
+            chainId.toString()
+          ),
+          multiSendCallOnlyAddress: getMultiSendCallOnlyContractAddress(
+            safeContractVersion,
+            chainId.toString()
+          ),
+          safeMasterCopyAddress: safeContractAddress,
+          safeProxyFactoryAddress: safeFactoryContractAddress,
+        },
       };
     }
   }

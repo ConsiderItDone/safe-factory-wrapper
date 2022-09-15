@@ -1,14 +1,17 @@
 import {
-  ContractNetworksConfig,
   Ethereum_Connection,
   Ethereum_Module,
-  Logger_Module,
   SafeAccountConfig,
   SafeDeploymentConfig,
   Safe_Module,
 } from "../wrap";
 import { BigInt } from "@polywrap/wasm-as";
-import versionMap from "./contractAddresses";
+import {
+  getMultisendCallOnlyContractMap,
+  getMultisendContractMap,
+  getSafeContractMap,
+  getSafeFactoryContractMap,
+} from "./contractAddresses";
 import { JSON } from "@polywrap/wasm-as";
 
 export const ZERO_ADDRESS = `0x${"0".repeat(40)}`;
@@ -84,40 +87,66 @@ export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
 
 export function getSafeContractAddress(
   safeVersion: string,
-  chainId: string
+  chainId: string,
+  isL2: boolean = false
 ): string {
-  return "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552";
-  const versionSupported = versionMap.has(safeVersion);
+  const safeContractMap = getSafeContractMap(safeVersion, isL2);
 
-  if (!versionSupported) {
-    throw new Error("Version isn't supported");
+  const hasContractAddress = safeContractMap.has(chainId);
+
+  if (hasContractAddress) {
+    const contractAddress = safeContractMap.get(chainId);
+    return <string>contractAddress;
   } else {
-    const version = versionMap.get(safeVersion)!;
-    const hasContractAddress = version.has(chainId);
-    if (hasContractAddress) {
-      const contractAddress = version.get(chainId);
-      return contractAddress!;
-    } else {
-      return "0x3E5c63644E683549055b9Be8653de26E0B4CD36E";
-      throw new Error("No contract for provided chainId");
-    }
+    throw new Error("No safe contract for provided chainId");
   }
 }
+
 export function getSafeFactoryContractAddress(
   safeVersion: string,
   chainId: string
 ): string {
-  return "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2";
+  const safeFactoryContractMap = getSafeFactoryContractMap(safeVersion);
+
+  const hasContractAddress = safeFactoryContractMap.has(chainId);
+  if (hasContractAddress) {
+    const contractAddress = safeFactoryContractMap.get(chainId);
+    return <string>contractAddress;
+  } else {
+    throw new Error("No factory contract for provided chainId");
+  }
+}
+export function getMultiSendContractAddress(
+  safeVersion: string,
+  chainId: string
+): string {
+  const multiSendContractMap = getMultisendContractMap(safeVersion);
+
+  const hasMultisendContractAddress = multiSendContractMap.has(chainId);
+  if (hasMultisendContractAddress) {
+    return <string>multiSendContractMap.get(chainId);
+  } else {
+    throw new Error("No multisend contract for provided chainId");
+  }
+}
+export function getMultiSendCallOnlyContractAddress(
+  safeVersion: string,
+  chainId: string
+): string {
+  const multiSendContractMap = getMultisendCallOnlyContractMap(safeVersion);
+
+  const hasMultisendContractAddress = multiSendContractMap.has(chainId);
+  if (hasMultisendContractAddress) {
+    return <string>multiSendContractMap.get(chainId);
+  } else {
+    throw new Error("No multisend call only contract for provided chainId");
+  }
 }
 
 export function isContractDeployed(
   address: string,
   connection: Ethereum_Connection | null
-  //defaultBlock?: string
 ): boolean {
-  //https://github.com/ethers-io/ethers.js/blob/44cbc7fa4e199c1d6113ceec3c5162f53def5bb8/packages/providers/src.ts/etherscan-provider.ts#L286
-  //const contractCode = this.getContractCode(address, defaultBlock)
-  //return contractCode !== '0x'
   const code = Ethereum_Module.sendRPC({
     method: "eth_getCode",
     connection: connection,
@@ -128,30 +157,4 @@ export function isContractDeployed(
     return code != "0x";
   }
   return false;
-}
-
-export function getContractNetworks(
-  safeVersion: string,
-  chainId: string
-): ContractNetworksConfig {
-  //https://github.com/safe-global/safe-core-sdk/blob/a0fefbf2f8aed39b17de2cad27f86b46e732d1c3/packages/safe-core-sdk/tests/utils/setupContractNetworks.ts#L4
-
-  const version = versionMap.get(safeVersion);
-
-  if (!version) {
-    throw new Error("Version isn't supported");
-  } else {
-    const contractAddress = version.get(chainId);
-    if (!contractAddress) {
-      throw new Error("No contract network config for provided chainId");
-    } else {
-      return {
-        //TODO mapping for contract adressess
-        multiSendAddress: "",
-        multiSendCallOnlyAddress: "",
-        safeMasterCopyAddress: contractAddress,
-        safeProxyFactoryAddress: "",
-      };
-    }
-  }
 }

@@ -7,7 +7,7 @@ type Module {
     deploySafe(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
-        options: TransactionOptions,
+        #options: TransactionOptions,
         connection: Ethereum_Connection,
         txOverrides: Ethereum_TxOverrides
     ): SafePayload
@@ -90,7 +90,7 @@ type BaseTransactionResult {
 type TransactionResult implements BaseTransactionResult {
     receipt: Ethereum_TxReceipt
     transactionResponse: Ethereum_TxResponse
-    options: TransactionOptions
+    #options: TransactionOptions
 }
 
 type TransactionOptions {
