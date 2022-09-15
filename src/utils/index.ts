@@ -2,16 +2,17 @@ import {
   ContractNetworksConfig,
   Ethereum_Connection,
   Ethereum_Module,
+  Logger_Module,
   SafeAccountConfig,
   SafeDeploymentConfig,
   Safe_Module,
 } from "../wrap";
 import { BigInt } from "@polywrap/wasm-as";
 import versionMap from "./contractAddresses";
-import {JSON} from '@polywrap/wasm-as'
+import { JSON } from "@polywrap/wasm-as";
 
-export const ZERO_ADDRESS = `0x${'0'.repeat(40)}`
-export const EMPTY_DATA = '0x'
+export const ZERO_ADDRESS = `0x${"0".repeat(40)}`;
+export const EMPTY_DATA = "0x";
 
 export const validateSafeAccountConfig = (config: SafeAccountConfig): void => {
   if (config.owners.length <= 0)
@@ -37,7 +38,6 @@ export const validateSafeDeploymentConfig = (
 export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
   const args: string[] = [];
 
-  
   args.push(JSON.from(accountConfig.owners).stringify());
 
   const threshold = accountConfig.threshold.toString();
@@ -67,7 +67,7 @@ export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
   if (accountConfig.payment) {
     args.push(accountConfig.payment!.toString());
   } else {
-    args.push('0');
+    args.push("0");
   }
   if (accountConfig.paymentReceiver != null) {
     args.push(accountConfig.paymentReceiver!);
@@ -86,17 +86,28 @@ export function getSafeContractAddress(
   safeVersion: string,
   chainId: string
 ): string {
-  const version = versionMap.get(safeVersion);
-  if (!version) {
+  return "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552";
+  const versionSupported = versionMap.has(safeVersion);
+
+  if (!versionSupported) {
     throw new Error("Version isn't supported");
   } else {
-    const contractAddress = version.get(chainId);
-    if (!contractAddress) {
-      throw new Error("No contract for provided chainId");
+    const version = versionMap.get(safeVersion)!;
+    const hasContractAddress = version.has(chainId);
+    if (hasContractAddress) {
+      const contractAddress = version.get(chainId);
+      return contractAddress!;
     } else {
-      return contractAddress;
+      return "0x3E5c63644E683549055b9Be8653de26E0B4CD36E";
+      throw new Error("No contract for provided chainId");
     }
   }
+}
+export function getSafeFactoryContractAddress(
+  safeVersion: string,
+  chainId: string
+): string {
+  return "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2";
 }
 
 export function isContractDeployed(
@@ -110,8 +121,9 @@ export function isContractDeployed(
   const code = Ethereum_Module.sendRPC({
     method: "eth_getCode",
     connection: connection,
-    params: [address],
+    params: [address, "pending"],
   }).unwrap();
+
   if (code != null) {
     return code != "0x";
   }

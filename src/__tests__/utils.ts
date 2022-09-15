@@ -3,7 +3,7 @@ import { ensResolverPlugin } from "@polywrap/ens-resolver-plugin-js";
 import { ethereumPlugin } from "@polywrap/ethereum-plugin-js";
 import { ipfsPlugin } from "@polywrap/ipfs-plugin-js";
 import { dateTimePlugin } from "polywrap-datetime-plugin";
-
+import { Wallet } from "ethers";
 import { loggerPlugin } from "@polywrap/logger-plugin-js";
 import path from "path";
 
@@ -18,7 +18,8 @@ const proxyFactorywrapperPath: string = path.join(
 export function getPlugins(
   ethereum: string,
   ipfs: string,
-  ensAddress: string
+  ensAddress: string,
+  network: string
 ): Partial<ClientConfig> {
   return {
     redirects: [
@@ -40,11 +41,17 @@ export function getPlugins(
         uri: "wrap://ens/ethereum.polywrap.eth",
         plugin: ethereumPlugin({
           networks: {
+            [network]: {
+              provider: `https://${network}.infura.io/v3/9d16956e670e4429b9fc821128eb259c`, // ethereum,
+              signer: new Wallet(
+                "8ca435f1321b8043d984d95776cf53f570f2e296f86a8b0c9ddbd7c537cee6a2"
+              ),
+            },
             testnet: {
               provider: ethereum,
             },
           },
-          defaultNetwork: "testnet",
+          defaultNetwork: network,
         }),
       },
       {

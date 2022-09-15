@@ -1,7 +1,9 @@
+import { BigInt } from "@polywrap/wasm-as";
 import {
   encodeSetupCallData,
   getContractNetworks,
   getSafeContractAddress,
+  getSafeFactoryContractAddress,
   isContractDeployed,
   validateSafeAccountConfig,
   validateSafeDeploymentConfig,
@@ -13,6 +15,7 @@ import {
   Logger_Module,
   SafePayload,
   Safe_Ethereum_Connection,
+  Safe_Ethereum_TxOverrides,
   Safe_Module,
 } from "./wrap";
 
@@ -22,10 +25,6 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   if (args.safeDeploymentConfig != null) {
     validateSafeDeploymentConfig(args.safeDeploymentConfig!);
   }
-
-  /*   const signerAddress = Ethereum_Module.getSignerAddress({
-    connection: args.connection,
-  }).unwrap(); */
 
   const initializer = encodeSetupCallData(args.safeAccountConfig);
 
@@ -72,18 +71,43 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     };
   }
 
+  let txOverrides: Safe_Ethereum_TxOverrides | null = null;
+
+  if (args.txOverrides != null) {
+    txOverrides = { value: null, gasLimit: null, gasPrice: null };
+    if (args.txOverrides!.value) {
+      txOverrides.value = args.txOverrides!.value;
+    }
+    if (args.txOverrides!.gasLimit) {
+      txOverrides.gasLimit = args.txOverrides!.gasLimit;
+    }
+    if (args.txOverrides!.gasPrice) {
+      txOverrides.gasPrice = args.txOverrides!.gasPrice;
+    }
+  }
+
   const chainId = Ethereum_Module.getNetwork({
     connection: args.connection,
   }).unwrap().chainId;
-  
-  Logger_Module.log({level:0, message:'chainId: ' + chainId.toString()})
-  
+
+  Logger_Module.log({ level: 0, message: "chainId: " + chainId.toString() });
+
   //https://github.com/safe-global/safe-deployments/tree/main/src/assets - contract adressess
+
   const safeContractAddress = getSafeContractAddress(
     safeContractVersion,
     chainId.toString()
   );
-  
+
+  const safeFactoryContractAddress = getSafeFactoryContractAddress(
+    safeContractVersion,
+    chainId.toString()
+  );
+
+  Logger_Module.log({
+    level: 0,
+    message: "safeFactoryContractAddress" + safeFactoryContractAddress,
+  });
 
   Logger_Module.log({
     level: 0,
@@ -92,17 +116,19 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
 
   const safeAddress = Safe_Module.createProxy({
     safeMasterCopyAddress: safeContractAddress,
-    address: safeContractAddress,
+    address: safeFactoryContractAddress,
     connection: connection,
     initializer: initializer,
-    saltNonce: <u32>Number.parseFloat(saltNonce),
+    saltNonce: <u32>BigInt.from(saltNonce).toUInt64(),
+    txOverrides: txOverrides,
   }).unwrap();
 
-  // https://github.com/safe-global/safe-core-sdk/blob/a0fefbf2f8aed39b17de2cad27f86b46e732d1c3/packages/safe-ethers-lib/src/EthersAdapter.ts#L149
-  /*   const isContractDeployed = await this.#ethAdapter.isContractDeployed(
-    safeAddress
-  ); */
   if (safeAddress != null) {
+    Logger_Module.log({
+      level: 0,
+      message: "safeAddress" + safeAddress!,
+    });
+
     const contractDeployed = isContractDeployed(safeAddress!, args.connection);
 
     if (!contractDeployed) {

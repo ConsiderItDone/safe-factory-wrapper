@@ -13,7 +13,7 @@ import { getPlugins } from "../utils";
 jest.setTimeout(500000);
 
 describe("ProxyFactory", () => {
-  const CONNECTION = { networkNameOrChainId: "rinkeby" };
+  const CONNECTION = { networkNameOrChainId: "ropsten" };
 
   let client: PolywrapClient;
 
@@ -32,7 +32,8 @@ describe("ProxyFactory", () => {
     const config = getPlugins(
       providers.ethereum,
       providers.ipfs,
-      ensAddresses.ensAddress
+      ensAddresses.ensAddress,
+      CONNECTION.networkNameOrChainId
     );
     client = new PolywrapClient(config);
   });
@@ -45,20 +46,15 @@ describe("ProxyFactory", () => {
     const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
         safeAccountConfig: {
-          owners: [`0x${'0'.repeat(40)}`, `0x${'0'.repeat(40)}`],
+          owners: [`0xd405aebF7b60eD2cb2Ac4497Bddd292DEe534E82`],
           threshold: 1,
         },
-         safeDeploymentConfig: {
-          saltNonce: "20",
-          version: "1.3.0",
-        }, 
         connection: CONNECTION,
         options: {},
+        txOverrides: { gasLimit: "10000000" },
       },
       client,
       wrapperUri
-
-      //sethereumUri
     );
     console.log("response", deploySafeResponse);
 

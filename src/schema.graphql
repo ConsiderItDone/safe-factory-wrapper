@@ -8,7 +8,8 @@ type Module {
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
         options: TransactionOptions,
-        connection: Ethereum_Connection
+        connection: Ethereum_Connection,
+        txOverrides: Ethereum_TxOverrides
     ): SafePayload
 }
 
