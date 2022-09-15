@@ -32,7 +32,7 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   Logger_Module.log({ level: 0, message: "initializer" + initializer });
 
   let saltNonce: string = "";
-  let safeContractVersion: string = "";
+  let safeContractVersion: string = "1.3.0";
   let isL1Safe = false;
 
   if (args.safeDeploymentConfig != null) {
@@ -49,8 +49,8 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     const timestamp = Datetime_Module.currentTimestamp({}).unwrap();
     const res = timestamp.mul(1000); //.add(Math.floor(Math.random() * 1000)); // TODO Math.random()
 
-    /* saltNonce = (Date.now() * 1000 + Math.floor(Math.random() * 1000)).toString(); */ saltNonce =
-      res.toString();
+    /* saltNonce = (Date.now() * 1000 + Math.floor(Math.random() * 1000)).toString(); */
+    saltNonce = res.toString();
 
     Logger_Module.log({ level: 0, message: "saltNonce" + saltNonce });
     safeContractVersion = "1.3.0";

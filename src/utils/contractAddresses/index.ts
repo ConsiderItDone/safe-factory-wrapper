@@ -26,17 +26,17 @@ export function getSafeContractMap(
   version: string,
   isL2: boolean = false
 ): Map<string, string> {
-  if (version === "1.3.0") {
+  if (version == "1.3.0") {
     if (isL2) {
       return generateMap(gnosis_safe_v130_l2);
     } else {
       return generateMap(gnosis_safe_v130);
     }
-  } else if (version === "1.2.0") {
+  } else if (version == "1.2.0") {
     return generateMap(gnosis_safe_v120);
-  } else if (version === "1.1.1") {
+  } else if (version == "1.1.1") {
     return generateMap(gnosis_safe_v111);
-  } else if (version === "1.0.0") {
+  } else if (version == "1.0.0") {
     return generateMap(gnosis_safe_v100);
   } else {
     throw new Error("Invalid Safe version");
@@ -46,9 +46,9 @@ export function getSafeContractMap(
 export function getSafeFactoryContractMap(
   version: string
 ): Map<string, string> {
-  if (version === "1.3.0") {
+  if (version == "1.3.0") {
     return generateMap(proxy_factory_v130);
-  } else if (version === "1.2.0" || version === "1.1.1") {
+  } else if (version == "1.2.0" || version == "1.1.1") {
     return generateMap(proxy_factory_v111);
   } else {
     throw new Error("Invalid Safe version");
@@ -56,9 +56,9 @@ export function getSafeFactoryContractMap(
 }
 
 export function getMultisendContractMap(version: string): Map<string, string> {
-  if (version === "1.3.0") {
+  if (version == "1.3.0") {
     return generateMap(multi_send_v130);
-  } else if (version === "1.2.0" || version === "1.1.1") {
+  } else if (version == "1.2.0" || version == "1.1.1") {
     return generateMap(multi_send_v111);
   } else {
     throw new Error("Invalid Safe version");
@@ -67,7 +67,7 @@ export function getMultisendContractMap(version: string): Map<string, string> {
 export function getMultisendCallOnlyContractMap(
   version: string
 ): Map<string, string> {
-  if (version === "1.3.0" || version === "1.2.0" || version === "1.1.1") {
+  if (version == "1.3.0" || version == "1.2.0" || version == "1.1.1") {
     return generateMap(multi_send_call_only_v130);
   } else {
     throw new Error("Invalid Safe version");
