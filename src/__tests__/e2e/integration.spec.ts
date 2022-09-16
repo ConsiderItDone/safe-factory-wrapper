@@ -3,21 +3,25 @@ import {
   initTestEnvironment,
   stopTestEnvironment,
   providers,
-  ensAddresses
+  ensAddresses,
 } from "@polywrap/test-env-js";
 import * as App from "../types/wrap";
 import path from "path";
 
 import { getPlugins } from "../utils";
 
-//import { abi, bytecode } from "./GnosisSafeProxyFactory";
-
-import { abi, bytecode } from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
-
 jest.setTimeout(500000);
 
-describe("ProxyFactory", () => {
-  const CONNECTION = { networkNameOrChainId: "testnet" };
+//export const itif = (condition: boolean) => (condition ? it : it.skip)
+
+export const SAFE_LAST_VERSION = "1.3.0";
+export const SAFE_BASE_VERSION = "1.1.1";
+
+const txOverrides = { gasLimit: "1000000", gasPrice: "20" };
+const owners = ["0xd405aebF7b60eD2cb2Ac4497Bddd292DEe534E82"];
+
+describe("deploySafe", () => {
+  const CONNECTION = { networkNameOrChainId: "ropsten" };
 
   let client: PolywrapClient;
 
@@ -28,12 +32,16 @@ describe("ProxyFactory", () => {
     ".."
   );
   const wrapperUri = `fs/${wrapperPath}/build`;
-  const ethereumUri = "ens/ethereum.polywrap.eth";
 
   beforeAll(async () => {
     await initTestEnvironment();
 
-    const config = getPlugins(providers.ethereum, providers.ipfs, ensAddresses.ensAddress);
+    const config = getPlugins(
+      providers.ethereum,
+      providers.ipfs,
+      ensAddresses.ensAddress,
+      CONNECTION.networkNameOrChainId
+    );
     client = new PolywrapClient(config);
   });
 
@@ -41,134 +49,167 @@ describe("ProxyFactory", () => {
     await stopTestEnvironment();
   });
 
-  it("createProxy", async () => {
-
-    const deployContractResponse = await App.Ethereum_Module.deployContract(
+  it("should fail if there are no owners", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
-        abi: JSON.stringify(abi),
-        bytecode,
-        args: null,
-        connection: CONNECTION
-      },
-      client,
-      ethereumUri
-    );
-
-    const contractAddress = deployContractResponse.data as string;
-
-    expect(deployContractResponse).toBeTruthy();
-    expect(deployContractResponse.error).toBeFalsy();
-    expect(deployContractResponse.data).toBeTruthy();
-
-    const initCode = "0x";
-    const saltNonce = 42;
-    const response = await App.ProxyFactory_Module.createProxy(
-      {
-        address: contractAddress,
-        safeMasterCopyAddress: contractAddress,
-        initializer: initCode,
-        saltNonce,
+        safeAccountConfig: {
+          owners: [],
+          threshold: 1,
+        },
         connection: CONNECTION,
+        txOverrides: txOverrides,
       },
       client,
       wrapperUri
     );
 
-    expect(response).toBeTruthy();
-    expect(response.error).toBeFalsy();
-    expect(response.data).not.toBeNull();
-    expect(response.data).toEqual("0x1b721366fc1837d57b5d40a82c546e665545c6bc");
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
   });
 
-  it("proxyCreationCode", async () => {
-
-    const deployContractResponse = await App.Ethereum_Module.deployContract(
+  it("should fail if the threshold is lower than 0", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
-        abi: JSON.stringify(abi),
-        bytecode,
-        args: null,
-        connection: CONNECTION
-      },
-      client,
-      ethereumUri
-    );
-
-    const contractAddress = deployContractResponse.data as string;
-
-    expect(deployContractResponse).toBeTruthy();
-    expect(deployContractResponse.error).toBeFalsy();
-    expect(deployContractResponse.data).toBeTruthy();
-
-    const response = await App.ProxyFactory_Module.proxyCreationCode(
-      {
-        address: contractAddress,
+        safeAccountConfig: {
+          owners: owners,
+          threshold: -1,
+        },
         connection: CONNECTION,
+        txOverrides: txOverrides,
       },
       client,
       wrapperUri
     );
 
-    expect(response).toBeTruthy();
-    expect(response.error).toBeFalsy();
-    expect(response.data).not.toBeNull();
-    expect(response.data).toEqual("0x608060405234801561001057600080fd5b506040516101e63803806101e68339818101604052602081101561003357600080fd5b8101908080519060200190929190505050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156100ca576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260228152602001806101c46022913960400191505060405180910390fd5b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505060ab806101196000396000f3fe608060405273ffffffffffffffffffffffffffffffffffffffff600054167fa619486e0000000000000000000000000000000000000000000000000000000060003514156050578060005260206000f35b3660008037600080366000845af43d6000803e60008114156070573d6000fd5b3d6000f3fea2646970667358221220d1429297349653a4918076d650332de1a1068c5f3e07c5c82360c277770b955264736f6c63430007060033496e76616c69642073696e676c65746f6e20616464726573732070726f7669646564");
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
   });
 
-  it("estimateGas", async () => {
-
-    const deployContractResponse = await App.Ethereum_Module.deployContract(
+  it("should fail if the threshold is higher than the owners length", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
-        abi: JSON.stringify(abi),
-        bytecode,
-        args: null,
-        connection: CONNECTION
-      },
-      client,
-      ethereumUri
-    );
-
-    const contractAddress = deployContractResponse.data as string;
-
-    expect(deployContractResponse).toBeTruthy();
-    expect(deployContractResponse.error).toBeFalsy();
-    expect(deployContractResponse.data).toBeTruthy();
-
-    const initCode = "0x";
-    const saltNonce = 42;
-    const response = await App.ProxyFactory_Module.estimateGas(
-      {
-        address: contractAddress,
-        method: "function createProxyWithNonce(address _singleton, bytes memory initializer, uint256 saltNonce)",
-        args: [contractAddress, initCode, saltNonce.toString()],
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 2,
+        },
         connection: CONNECTION,
+        txOverrides: txOverrides,
       },
       client,
       wrapperUri
     );
 
-    expect(response).toBeTruthy();
-    expect(response.error).toBeFalsy();
-    expect(response.data).not.toBeNull();
-    expect(response.data).toEqual("113499");
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
   });
 
-  it("encode", async () => {
-
-    const contractAddress = "0xf308c38449adef77ae59b3a02b4ea1fa5d1c46e1";
-    const initCode = "0x";
-    const saltNonce = 42;
-    const response = await App.ProxyFactory_Module.encode(
+  it("should fail if the saltNonce is lower than 0", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
-        method: "function createProxyWithNonce(address _singleton, bytes memory initializer, uint256 saltNonce)",
-        args: [contractAddress, initCode, saltNonce.toString()],
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 2,
+        },
+        safeDeploymentConfig: {
+          saltNonce: "-2",
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
       },
       client,
       wrapperUri
     );
 
-    expect(response).toBeTruthy();
-    expect(response.error).toBeFalsy();
-    expect(response.data).not.toBeNull();
-    expect(response.data).toEqual("0x1688f0b9000000000000000000000000f308c38449adef77ae59b3a02b4ea1fa5d1c46e10000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000002a0000000000000000000000000000000000000000000000000000000000000000");
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
+  });
+
+  it("should deploy a new Safe without saltNonce", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
+      {
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 1,
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
+      },
+      client,
+      wrapperUri
+    );
+
+    expect(deploySafeResponse.error).toBeFalsy();
+    expect(deploySafeResponse.data).toBeTruthy();
+  });
+
+  it("should deploy a new Safe with saltNonce", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
+      {
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 1,
+        },
+        safeDeploymentConfig: {
+          saltNonce: Date.now().toString(),
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
+      },
+      client,
+      wrapperUri
+    );
+
+    expect(deploySafeResponse.error).toBeFalsy();
+    expect(deploySafeResponse.data).toBeTruthy();
+  });
+
+  //it("should deploy a new Safe with callback", async () => {});
+
+  /*     itif(safeVersionDeployed === SAFE_LAST_VERSION)(
+      "should deploy last Safe version by default",
+      async () => {}
+    ); */
+  it("should fail a specific Safe version on unsupported chain", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
+      {
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 1,
+        },
+        safeDeploymentConfig: {
+          saltNonce: Date.now().toString(),
+          version: "1.2.0",
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
+      },
+      client,
+      wrapperUri
+    );
+
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
+  });
+
+  it("should deploy a specific Safe version", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
+      {
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 1,
+        },
+        safeDeploymentConfig: {
+          saltNonce: Date.now().toString(),
+          version: "1.3.0",
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
+      },
+      client,
+      wrapperUri
+    );
+
+    expect(deploySafeResponse.error).toBeFalsy();
+    expect(deploySafeResponse.data).toBeTruthy();
   });
 });

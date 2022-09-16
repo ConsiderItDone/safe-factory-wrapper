@@ -1,15 +1,16 @@
 #import { Module } into Safe from "wrap://ens/safe-proxy-factory-wrapper.polywrap.eth"
 #import { Module, Connection, TxOverrides, StaticTxResult, TxRequest, EventNotification, Network, TxReceipt, TxResponse, Log, Access } into Ethereum from "wrap://ens/ethereum.polywrap.eth"
+#import { Module } into Logger from "wrap://ens/js-logger.polywrap.eth"
 #import * into Datetime from "wrap://ens/datetime.polywrap.eth"
 
 type Module {
     deploySafe(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
-        options: TransactionOptions,
+        #options: TransactionOptions,
         connection: Ethereum_Connection,
-        callback: String,
-    ): String!
+        txOverrides: Ethereum_TxOverrides
+    ): SafePayload
 }
 
 enum OperationType {
@@ -17,9 +18,22 @@ enum OperationType {
     DelegateCall
 }
 
+type SafePayload {
+    safeAddress: String!
+    contractNetworks: ContractNetworksConfig
+    isL1SafeMasterCopy: Boolean!
+}
+
+type ContractNetworksConfig {
+      multiSendAddress: String
+      multiSendCallOnlyAddress: String
+      safeMasterCopyAddress: String
+      safeProxyFactoryAddress: String
+}
+
 type SafeAccountConfig {
     owners: [String!]!
-    threshold: UInt
+    threshold: UInt!
     to: String
     data: String
     fallbackHandler: String
@@ -30,6 +44,8 @@ type SafeAccountConfig {
 
 type SafeDeploymentConfig {
     saltNonce: String!
+    isL1Safe: Boolean
+    version: String
 }
 
 type MetaTransactionData {
@@ -74,7 +90,7 @@ type BaseTransactionResult {
 type TransactionResult implements BaseTransactionResult {
     receipt: Ethereum_TxReceipt
     transactionResponse: Ethereum_TxResponse
-    options: TransactionOptions
+    #options: TransactionOptions
 }
 
 type TransactionOptions {
