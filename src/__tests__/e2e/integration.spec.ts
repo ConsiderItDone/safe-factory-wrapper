@@ -163,12 +163,24 @@ describe("deploySafe", () => {
     expect(deploySafeResponse.data).toBeTruthy();
   });
 
-  //it("should deploy a new Safe with callback", async () => {});
 
-  /*     itif(safeVersionDeployed === SAFE_LAST_VERSION)(
-      "should deploy last Safe version by default",
-      async () => {}
-    ); */
+  it("should deploy last Safe version by default", async () => {
+    const deploySafeResponse = await App.Factory_Module.deploySafe(
+      {
+        safeAccountConfig: {
+          owners: owners,
+          threshold: 1,
+        },
+        connection: CONNECTION,
+        txOverrides: txOverrides,
+      },
+      client,
+      wrapperUri
+    );
+
+    expect(deploySafeResponse.error).toBeTruthy();
+    expect(deploySafeResponse.data).toBeFalsy();
+  });
   it("should fail a specific Safe version on unsupported chain", async () => {
     const deploySafeResponse = await App.Factory_Module.deploySafe(
       {
