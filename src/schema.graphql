@@ -11,6 +11,10 @@ type Module {
         connection: Ethereum_Connection,
         txOverrides: Ethereum_TxOverrides
     ): SafePayload
+
+    getChainId(
+        connection: Ethereum_Connection
+    ):String
 }
 
 enum OperationType {
