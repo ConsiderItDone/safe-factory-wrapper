@@ -193,8 +193,8 @@ describe("SafeFactory", () => {
         wrapperUri
       );
 
-      expect(deploySafeResponse.error).toBeTruthy();
-      expect(deploySafeResponse.data).toBeFalsy();
+      expect(deploySafeResponse.data).toBeTruthy();
+      expect(deploySafeResponse.error).toBeFalsy();
     });
 
     it("should fail a specific Safe version on unsupported chain", async () => {
