@@ -38,7 +38,6 @@ describe("SafeFactory", () => {
 
     const config = getPlugins(
       providers.ethereum,
-      providers.ipfs,
       ensAddresses.ensAddress,
       CONNECTION.networkNameOrChainId
     );
