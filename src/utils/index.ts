@@ -3,9 +3,10 @@ import {
   Ethereum_Module,
   SafeAccountConfig,
   SafeDeploymentConfig,
+  Safe_Ethereum_Connection,
   SafeContracts_Module,
 } from "../wrap";
-import { BigInt } from "@polywrap/wasm-as";
+import { BigInt, Result } from "@polywrap/wasm-as";
 import {
   getMultisendCallOnlyContractMap,
   getMultisendContractMap,
@@ -157,4 +158,84 @@ export function isContractDeployed(
     return code != "0x";
   }
   return false;
+}
+
+export function getInitCode(
+  safeProxyFactoryAddr: string,
+  gnosisSafeAddr: string,
+  connection: Safe_Ethereum_Connection | null
+): Result<string, string> {
+  const proxyCreationCode = Safe_Module.proxyCreationCode({
+    address: safeProxyFactoryAddr,
+    connection: connection
+  });
+  if (proxyCreationCode.isErr) {
+    return proxyCreationCode;
+  }
+  const constructorData = Ethereum_Module.encodeParams({
+    types: ["address"],
+    values: [gnosisSafeAddr],
+  });
+  if (constructorData.isErr) {
+    return constructorData;
+  }
+  return Result.Ok<string, string>(proxyCreationCode.unwrap() + constructorData.unwrap().slice(2));
+}
+
+export function generateSalt(nonce: string, initializer: string): Result<string, string> {
+  const encodedNonce = Ethereum_Module.encodeParams({
+    types: ["uint256"],
+    values: [nonce],
+  });
+  if (encodedNonce.isErr) {
+    return encodedNonce;
+  }
+  const initializerHash = Ethereum_Module.solidityKeccak256({
+    types: ["bytes"],
+    values: [initializer],
+  });
+  if (initializerHash.isErr) {
+    return initializerHash;
+  }
+  const result = Ethereum_Module.solidityKeccak256({
+    types: ["bytes"],
+    values: [
+      initializerHash.unwrap() + encodedNonce.unwrap().slice(2)
+    ],
+  });
+  return result;
+}
+
+/**
+ * EIP-1014
+ * keccak256(0xff ++ address ++ salt ++ keccak256(init_code))[12:]
+ * @address [address]
+ * @salt [bytes32]
+ * @initCode [bytes]
+ */
+export function generateAddress2(
+  address: string,
+  salt: string,
+  initCode: string,
+): Result<string, string> {
+  const initCodeHash = Ethereum_Module.solidityKeccak256({
+    types: ["bytes"],
+    values: [initCode],
+  });
+  if (initCodeHash.isErr) {
+    return initCodeHash;
+  }
+  const hash = Ethereum_Module.solidityKeccak256({
+    types: ["bytes1", "address", "bytes32", "bytes32"],
+    values: [
+      "0xff",
+      address,
+      salt,
+      initCodeHash.unwrap(),
+    ],
+  });
+  if (hash.isErr) {
+    return hash;
+  }
+  return Result.Ok<string, string>("0x" + hash.unwrap().slice(-40));
 }

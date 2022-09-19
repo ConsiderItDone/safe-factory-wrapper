@@ -241,4 +241,111 @@ describe("SafeFactory", () => {
       expect(deploySafeResponse.data).toBeTruthy();
     });
   });
+
+  describe('predictSafeAddress', () => {
+    it('should fail if there are no owners', async () => {
+      const predictSafeResp = await App.Factory_Module.predictSafeAddress(
+        {
+          safeAccountConfig: {
+            owners: [],
+            threshold: 1,
+          },
+          connection: CONNECTION,
+        },
+        client,
+        wrapperUri
+      )
+      expect(predictSafeResp.error).toBeTruthy();
+      expect(predictSafeResp.data).toBeFalsy();
+    });
+
+    it('should fail if the threshold is lower than 0', async () => {
+      const predictSafeResp = await App.Factory_Module.predictSafeAddress(
+        {
+          safeAccountConfig: {
+            owners: owners,
+            threshold: -1,
+          },
+          connection: CONNECTION,
+        },
+        client,
+        wrapperUri
+      )
+      expect(predictSafeResp.error).toBeTruthy();
+      expect(predictSafeResp.data).toBeFalsy();
+    });
+
+    it('should fail if the threshold is higher than the threshold', async () => {
+      const predictSafeResp = await App.Factory_Module.predictSafeAddress(
+        {
+          safeAccountConfig: {
+            owners: owners,
+            threshold: 2,
+          },
+          connection: CONNECTION,
+        },
+        client,
+        wrapperUri
+      )
+      expect(predictSafeResp.error).toBeTruthy();
+      expect(predictSafeResp.data).toBeFalsy();
+    });
+
+    it('should fail if the saltNonce is lower than 0', async () => {
+      const predictSafeResp = await App.Factory_Module.predictSafeAddress(
+        {
+          safeAccountConfig: {
+            owners: owners,
+            threshold: 2,
+          },
+          safeDeploymentConfig: {
+            saltNonce: "-2",
+          },
+          connection: CONNECTION,
+        },
+        client,
+        wrapperUri
+      )
+      expect(predictSafeResp.error).toBeTruthy();
+      expect(predictSafeResp.data).toBeFalsy();
+    });
+
+    it('should predict a new Safe with saltNonce', async () =>  {
+      const saltNonce = "12345";
+      const predictSafeResp = await App.Factory_Module.predictSafeAddress(
+        {
+          safeAccountConfig: {
+            owners: owners,
+            threshold: 1,
+          },
+          safeDeploymentConfig: {
+            saltNonce: saltNonce,
+          },
+          connection: CONNECTION,
+        },
+        client,
+        wrapperUri
+      )
+      const deploySafeResp = await App.Factory_Module.deploySafe(
+        {
+          safeAccountConfig: {
+            owners: owners,
+            threshold: 1,
+          },
+          safeDeploymentConfig: {
+            saltNonce: saltNonce,
+          },
+          connection: CONNECTION,
+          txOverrides: txOverrides,
+        },
+        client,
+        wrapperUri
+      );
+      console.log("predictSafeResp", predictSafeResp);
+      console.log("deploySafeResp", deploySafeResp);
+      expect(predictSafeResp.error).toBeFalsy();
+      expect(predictSafeResp.data).toBeTruthy();
+      expect(predictSafeResp.data).toEqual(deploySafeResp.data?.safeAddress.toLowerCase());
+    });
+  });
 });

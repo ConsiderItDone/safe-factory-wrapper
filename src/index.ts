@@ -1,6 +1,9 @@
 import { BigInt, Option } from "@polywrap/wasm-as";
 import {
   encodeSetupCallData,
+  generateAddress2,
+  generateSalt,
+  getInitCode,
   getMultiSendCallOnlyContractAddress,
   getMultiSendContractAddress,
   getSafeContractAddress,
@@ -155,16 +158,27 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   return null;
 }
 
-export function predictSafeAddress(args: Args_predictSafeAddress): Option<bool> {
+export function predictSafeAddress(args: Args_predictSafeAddress): String {
   validateSafeAccountConfig(args.safeAccountConfig);
   if (args.safeDeploymentConfig != null) {
     validateSafeDeploymentConfig(args.safeDeploymentConfig!);
   }
 
-  const chainId = getChainId({connection: args.connection});
-  let safeContractVersion = "1.3.0";
+  let connection: Safe_Ethereum_Connection | null = null;
+  if (args.connection != null) {
+    connection = {
+      node: args.connection!.node,
+      networkNameOrChainId: args.connection!.networkNameOrChainId,
+    };
+  }
+
+  let saltNonce: string = "";
+  let safeContractVersion: string = "1.3.0";
   let isL1Safe = false;
   if (args.safeDeploymentConfig != null) {
+    if (args.safeDeploymentConfig!.saltNonce != null) {
+      saltNonce = args.safeDeploymentConfig!.saltNonce;
+    }
     if (args.safeDeploymentConfig!.version != null) {
       safeContractVersion = args.safeDeploymentConfig!.version!;
     }
@@ -173,49 +187,43 @@ export function predictSafeAddress(args: Args_predictSafeAddress): Option<bool> 
     }
   }
 
+  const chainId = getChainId({connection: args.connection});
   const safeContractAddress = getSafeContractAddress(
     safeContractVersion,
     chainId.toString(),
-    isL1Safe
+    !isL1Safe
   );
   const safeFactoryContractAddress = getSafeFactoryContractAddress(
     safeContractVersion,
     chainId.toString()
   );
-
-  const from = safeFactoryContractAddress;
   const initializer = encodeSetupCallData(args.safeAccountConfig);
-  const saltNonce = args.safeDeploymentConfig!.saltNonce;
-  const salt = Ethereum_Module.solidityKeccak256({
-    types: ["bytes", "uint256"],
-    values: [
-      Ethereum_Module.solidityKeccak256({
-        types: ["bytes"],
-        values: [initializer],
-      }).unwrap(),
-      saltNonce
-    ]
-  }).unwrap()
+  Logger_Module.log({level: 0, message: "initializer " + initializer});
 
-  const proxyCreationCode = Safe_Module.proxyCreationCode({
-    address: safeFactoryContractAddress,
-    connection: null
-  }).unwrap();
-  const constructorData = Ethereum_Module.encodeParams({
-    types: ["address"],
-    values: [safeContractAddress]
-  })
+  const salt = generateSalt(saltNonce, initializer);
+  if (salt.isErr) {
+    Logger_Module.log({level: 0, message: "salt error: " + salt.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "salt " + salt.unwrap()});
 
-  const initCodeHash = Ethereum_Module.solidityKeccak256({
-    types: ["bytes"],
-    values: [proxyCreationCode + constructorData.unwrap()],
-  });
-  const addrHash = Ethereum_Module.solidityKeccak256({
-    types: ["bytes", "address", "bytes32", "bytes32"],
-    values: ["0xff", from, salt, initCodeHash.unwrap()],
-  })
-  const address = addrHash.unwrap().slice(-20);
-  const result = Ethereum_Module.checkAddress({ address });
-  
-  return Option.Some(result.unwrap());
+  const initCode = getInitCode(safeFactoryContractAddress, safeContractAddress, connection);
+  if (initCode.isErr) {
+    Logger_Module.log({level: 0, message: "initCode error: " + initCode.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "initCode " + initCode.unwrap()});
+
+  let address = generateAddress2(
+    safeFactoryContractAddress,
+    salt.unwrap(),
+    initCode.unwrap(),
+  );
+  if (address.isErr) {
+    Logger_Module.log({level: 0, message: "address error: " + address.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "address " + address.unwrap()});
+
+  return address.unwrap();
 }

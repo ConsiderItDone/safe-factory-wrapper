@@ -4,6 +4,9 @@
 #import * into Datetime from "wrap://ens/datetime.polywrap.eth"
 
 type Module {
+    getChainId(
+        connection: Ethereum_Connection
+    ):String
     deploySafe(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
@@ -11,15 +14,11 @@ type Module {
         connection: Ethereum_Connection,
         txOverrides: Ethereum_TxOverrides
     ): SafePayload
-
-    getChainId(
-        connection: Ethereum_Connection
-    ):String
     predictSafeAddress(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
         connection: Ethereum_Connection,
-    ): Boolean
+    ):String
 }
 
 enum OperationType {
