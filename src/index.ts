@@ -161,15 +161,22 @@ export function predictSafeAddress(args: Args_predictSafeAddress): bool {
     validateSafeDeploymentConfig(args.safeDeploymentConfig);
   }
 
-  const safeContractVersion = args.safeDeploymentConfig?.version ?? "1.3.0";
-  const chainId = Ethereum_Module.getNetwork({
-    connection: args.connection,
-  }).unwrap().chainId;
+  const chainId = getChainId({connection: args.connection});
+  let safeContractVersion = "1.3.0";
+  let isL1Safe = false;
+  if (args.safeDeploymentConfig != null) {
+    if (args.safeDeploymentConfig?.version != null) {
+      safeContractVersion = args.safeDeploymentConfig?.version;
+    }
+    if (args.safeDeploymentConfig!.isL1Safe) {
+      isL1Safe = true;
+    }
+  }
 
   const safeContractAddress = getSafeContractAddress(
     safeContractVersion,
     chainId.toString(),
-    !(args.safeDeploymentConfig?.isL1Safe ?? false)
+    isL1Safe
   );
   const safeFactoryContractAddress = getSafeFactoryContractAddress(
     safeContractVersion,
