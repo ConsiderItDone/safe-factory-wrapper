@@ -1,4 +1,4 @@
-import { BigInt } from "@polywrap/wasm-as";
+import { BigInt, Option } from "@polywrap/wasm-as";
 import {
   encodeSetupCallData,
   getMultiSendCallOnlyContractAddress,
@@ -155,18 +155,18 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   return null;
 }
 
-export function predictSafeAddress(args: Args_predictSafeAddress): bool {
+export function predictSafeAddress(args: Args_predictSafeAddress): Option<bool> {
   validateSafeAccountConfig(args.safeAccountConfig);
-  if (args.safeDeploymentConfig !== null) {
-    validateSafeDeploymentConfig(args.safeDeploymentConfig);
+  if (args.safeDeploymentConfig != null) {
+    validateSafeDeploymentConfig(args.safeDeploymentConfig!);
   }
 
   const chainId = getChainId({connection: args.connection});
   let safeContractVersion = "1.3.0";
   let isL1Safe = false;
   if (args.safeDeploymentConfig != null) {
-    if (args.safeDeploymentConfig?.version != null) {
-      safeContractVersion = args.safeDeploymentConfig?.version;
+    if (args.safeDeploymentConfig!.version != null) {
+      safeContractVersion = args.safeDeploymentConfig!.version!;
     }
     if (args.safeDeploymentConfig!.isL1Safe) {
       isL1Safe = true;
@@ -208,13 +208,14 @@ export function predictSafeAddress(args: Args_predictSafeAddress): bool {
 
   const initCodeHash = Ethereum_Module.solidityKeccak256({
     types: ["bytes"],
-    values: [proxyCreationCode + constructorData],
+    values: [proxyCreationCode + constructorData.unwrap()],
   });
   const addrHash = Ethereum_Module.solidityKeccak256({
     types: ["bytes", "address", "bytes32", "bytes32"],
     values: ["0xff", from, salt, initCodeHash.unwrap()],
   })
   const address = addrHash.unwrap().slice(-20);
+  const result = Ethereum_Module.checkAddress({ address });
   
-  return Ethereum_Module.checkAddress({ address }).unwrap()
+  return Option.Some(result.unwrap());
 }
