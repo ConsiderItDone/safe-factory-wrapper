@@ -25,7 +25,7 @@ export function getPlugins(
     redirects: [
       {
         from: "wrap://ens/safe-proxy-factory-wrapper.polywrap.eth",
-        to: `fs/${proxyFactorywrapperPath}/build`,
+        to: `wrap://ipfs/QmWTcA4vDAE1pXGeDCV4ct4qSEPuRNjxsmjVmUx5UNpKrh`,
       },
     ],
     plugins: [
