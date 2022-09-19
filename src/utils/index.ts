@@ -3,7 +3,7 @@ import {
   Ethereum_Module,
   SafeAccountConfig,
   SafeDeploymentConfig,
-  Safe_Module,
+  SafeContracts_Module,
 } from "../wrap";
 import { BigInt } from "@polywrap/wasm-as";
 import {
@@ -78,7 +78,7 @@ export function encodeSetupCallData(accountConfig: SafeAccountConfig): string {
     args.push(ZERO_ADDRESS);
   }
 
-  return Safe_Module.encode({
+  return SafeContracts_Module.encode({
     method:
       "function setup(address[] calldata _owners, uint256 _threshold, address to, bytes calldata data, address fallbackHandler, address paymentToken, uint256 payment, address payable paymentReceiver)",
     args: args,
