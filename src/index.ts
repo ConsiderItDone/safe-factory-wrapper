@@ -161,9 +161,22 @@ export function predictSafeAddress(args: Args_predictSafeAddress): bool {
     validateSafeDeploymentConfig(args.safeDeploymentConfig);
   }
 
-  // ToDo: заменить заглушку
-  // this.#safeProxyFactoryContract.getAddress()
-  const from = "0x0000000000000000000000000000000000000000";
+  const safeContractVersion = args.safeDeploymentConfig?.version ?? "1.3.0";
+  const chainId = Ethereum_Module.getNetwork({
+    connection: args.connection,
+  }).unwrap().chainId;
+
+  const safeContractAddress = getSafeContractAddress(
+    safeContractVersion,
+    chainId.toString(),
+    !(args.safeDeploymentConfig?.isL1Safe ?? false)
+  );
+  const safeFactoryContractAddress = getSafeFactoryContractAddress(
+    safeContractVersion,
+    chainId.toString()
+  );
+
+  const from = safeFactoryContractAddress;
   const initializer = encodeSetupCallData(args.safeAccountConfig);
   const saltNonce = args.safeDeploymentConfig!.saltNonce;
   const salt = Ethereum_Module.solidityKeccak256({
@@ -176,16 +189,14 @@ export function predictSafeAddress(args: Args_predictSafeAddress): bool {
       saltNonce
     ]
   }).unwrap()
-  // ToDo: нужно откуда-то взять адрес прокси
+
   const proxyCreationCode = Safe_Module.proxyCreationCode({
-    address: "0x0000000000000000000000000000000000000000",
+    address: safeFactoryContractAddress,
     connection: null
   }).unwrap();
   const constructorData = Ethereum_Module.encodeParams({
     types: ["address"],
-    // ToDo: заменить заглушку
-    // this.#gnosisSafeContract.getAddress()
-    values: ["0x0000000000000000000000000000000000000000"]
+    values: [safeContractAddress]
   })
 
   const initCodeHash = Ethereum_Module.solidityKeccak256({

@@ -18,6 +18,7 @@ type Module {
     predictSafeAddress(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
+        connection: Ethereum_Connection,
     ): Boolean
 }
 
