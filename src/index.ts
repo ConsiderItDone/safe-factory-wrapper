@@ -11,6 +11,7 @@ import {
 } from "./utils";
 import {
   Args_deploySafe,
+  Args_getChainId,
   Datetime_Module,
   Ethereum_Module,
   Logger_Module,
@@ -19,6 +20,12 @@ import {
   Safe_Ethereum_TxOverrides,
   Safe_Module,
 } from "./wrap";
+
+export function getChainId(args:Args_getChainId): String {
+  return Ethereum_Module.getNetwork({
+    connection: args.connection,
+  }).unwrap().chainId.toString();
+}
 
 export function deploySafe(args: Args_deploySafe): SafePayload | null {
   validateSafeAccountConfig(args.safeAccountConfig);
@@ -56,14 +63,6 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     safeContractVersion = "1.3.0";
   }
 
-  /*   if (args.options != null) {
-    if (args.options!.gas && args.options!.gasLimit) {
-      throw new Error(
-        "Cannot specify gas and gasLimit together in transaction options"
-      );
-    }
-  } */
-
   let connection: Safe_Ethereum_Connection | null = null;
   if (args.connection != null) {
     connection = {
@@ -86,10 +85,7 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
       txOverrides.gasPrice = args.txOverrides!.gasPrice;
     }
   }
-
-  const chainId = Ethereum_Module.getNetwork({
-    connection: args.connection,
-  }).unwrap().chainId;
+  const chainId = getChainId({connection: args.connection})
 
   Logger_Module.log({ level: 0, message: "chainId: " + chainId.toString() });
 

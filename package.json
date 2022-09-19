@@ -10,7 +10,7 @@
     "build"
   ],
   "scripts": {
-    "build": "npx polywrap codegen && npx polywrap build",
+    "build": "npx polywrap build",
     "codegen": "npx polywrap codegen",
     "test": "yarn test:e2e && yarn test:workflow",
     "test:e2e": "yarn test:e2e:codegen && jest --passWithNoTests --runInBand --verbose",
