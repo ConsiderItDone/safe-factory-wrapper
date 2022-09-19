@@ -16,9 +16,9 @@ import {
   Ethereum_Module,
   Logger_Module,
   SafePayload,
-  Safe_Ethereum_Connection,
-  Safe_Ethereum_TxOverrides,
-  Safe_Module,
+  SafeContracts_Ethereum_Connection,
+  SafeContracts_Ethereum_TxOverrides,
+  SafeContracts_Module,
 } from "./wrap";
 
 export function getChainId(args:Args_getChainId): String {
@@ -63,7 +63,7 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     safeContractVersion = "1.3.0";
   }
 
-  let connection: Safe_Ethereum_Connection | null = null;
+  let connection: SafeContracts_Ethereum_Connection | null = null;
   if (args.connection != null) {
     connection = {
       node: args.connection!.node,
@@ -71,7 +71,7 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     };
   }
 
-  let txOverrides: Safe_Ethereum_TxOverrides | null = null;
+  let txOverrides: SafeContracts_Ethereum_TxOverrides | null = null;
 
   if (args.txOverrides != null) {
     txOverrides = { value: null, gasLimit: null, gasPrice: null };
@@ -110,7 +110,7 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
     message: "safeContractAddress" + safeContractAddress,
   });
 
-  const safeAddress = Safe_Module.createProxy({
+  const safeAddress = SafeContracts_Module.createProxy({
     safeMasterCopyAddress: safeContractAddress,
     address: safeFactoryContractAddress,
     connection: connection,
