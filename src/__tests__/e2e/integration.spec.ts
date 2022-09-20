@@ -311,7 +311,7 @@ describe("SafeFactory", () => {
     });
 
     it('should predict a new Safe with saltNonce', async () =>  {
-      const saltNonce = "12345";
+      const saltNonce = "0x125";
       const predictSafeResp = await App.Factory_Module.predictSafeAddress(
         {
           safeAccountConfig: {
