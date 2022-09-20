@@ -3,7 +3,7 @@ import {
   Ethereum_Module,
   SafeAccountConfig,
   SafeDeploymentConfig,
-  Safe_Ethereum_Connection,
+  SafeContracts_Ethereum_Connection,
   SafeContracts_Module,
 } from "../wrap";
 import { BigInt, Result } from "@polywrap/wasm-as";
@@ -163,15 +163,16 @@ export function isContractDeployed(
 export function getInitCode(
   safeProxyFactoryAddr: string,
   gnosisSafeAddr: string,
-  connection: Safe_Ethereum_Connection | null
+  connection: SafeContracts_Ethereum_Connection | null
 ): Result<string, string> {
-  const proxyCreationCode = Safe_Module.proxyCreationCode({
+  const proxyCreationCode = SafeContracts_Module.proxyCreationCode({
     address: safeProxyFactoryAddr,
     connection: connection
   });
   if (proxyCreationCode.isErr) {
     return proxyCreationCode;
   }
+
   const constructorData = Ethereum_Module.encodeParams({
     types: ["address"],
     values: [gnosisSafeAddr],
@@ -179,6 +180,7 @@ export function getInitCode(
   if (constructorData.isErr) {
     return constructorData;
   }
+
   return Result.Ok<string, string>(proxyCreationCode.unwrap() + constructorData.unwrap().slice(2));
 }
 
@@ -190,6 +192,7 @@ export function generateSalt(nonce: string, initializer: string): Result<string,
   if (encodedNonce.isErr) {
     return encodedNonce;
   }
+
   const initializerHash = Ethereum_Module.solidityKeccak256({
     types: ["bytes"],
     values: [initializer],
@@ -197,13 +200,13 @@ export function generateSalt(nonce: string, initializer: string): Result<string,
   if (initializerHash.isErr) {
     return initializerHash;
   }
-  const result = Ethereum_Module.solidityKeccak256({
+
+  return Ethereum_Module.solidityKeccak256({
     types: ["bytes"],
     values: [
       initializerHash.unwrap() + encodedNonce.unwrap().slice(2)
     ],
   });
-  return result;
 }
 
 /**
@@ -225,6 +228,7 @@ export function generateAddress2(
   if (initCodeHash.isErr) {
     return initCodeHash;
   }
+
   const hash = Ethereum_Module.solidityKeccak256({
     types: ["bytes1", "address", "bytes32", "bytes32"],
     values: [
@@ -237,5 +241,6 @@ export function generateAddress2(
   if (hash.isErr) {
     return hash;
   }
+
   return Result.Ok<string, string>("0x" + hash.unwrap().slice(-40));
 }

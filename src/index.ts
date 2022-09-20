@@ -164,7 +164,7 @@ export function predictSafeAddress(args: Args_predictSafeAddress): String {
     validateSafeDeploymentConfig(args.safeDeploymentConfig!);
   }
 
-  let connection: Safe_Ethereum_Connection | null = null;
+  let connection: SafeContracts_Ethereum_Connection | null = null;
   if (args.connection != null) {
     connection = {
       node: args.connection!.node,

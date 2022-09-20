@@ -7,6 +7,7 @@ type Module {
     getChainId(
         connection: Ethereum_Connection
     ):String
+
     deploySafe(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
@@ -14,6 +15,7 @@ type Module {
         connection: Ethereum_Connection,
         txOverrides: Ethereum_TxOverrides
     ): SafePayload
+
     predictSafeAddress(
         safeAccountConfig: SafeAccountConfig!,
         safeDeploymentConfig: SafeDeploymentConfig,
