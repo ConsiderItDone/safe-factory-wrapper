@@ -1,6 +1,9 @@
-import { BigInt } from "@polywrap/wasm-as";
+import { BigInt, Option } from "@polywrap/wasm-as";
 import {
   encodeSetupCallData,
+  generateAddress2,
+  generateSalt,
+  getInitCode,
   getMultiSendCallOnlyContractAddress,
   getMultiSendContractAddress,
   getSafeContractAddress,
@@ -12,6 +15,7 @@ import {
 import {
   Args_deploySafe,
   Args_getChainId,
+  Args_predictSafeAddress,
   Datetime_Module,
   Ethereum_Module,
   Logger_Module,
@@ -152,4 +156,74 @@ export function deploySafe(args: Args_deploySafe): SafePayload | null {
   }
 
   return null;
+}
+
+export function predictSafeAddress(args: Args_predictSafeAddress): String {
+  validateSafeAccountConfig(args.safeAccountConfig);
+  if (args.safeDeploymentConfig != null) {
+    validateSafeDeploymentConfig(args.safeDeploymentConfig!);
+  }
+
+  let connection: SafeContracts_Ethereum_Connection | null = null;
+  if (args.connection != null) {
+    connection = {
+      node: args.connection!.node,
+      networkNameOrChainId: args.connection!.networkNameOrChainId,
+    };
+  }
+
+  let saltNonce: string = "";
+  let safeContractVersion: string = "1.3.0";
+  let isL1Safe = false;
+  if (args.safeDeploymentConfig != null) {
+    if (args.safeDeploymentConfig!.saltNonce != null) {
+      saltNonce = args.safeDeploymentConfig!.saltNonce;
+    }
+    if (args.safeDeploymentConfig!.version != null) {
+      safeContractVersion = args.safeDeploymentConfig!.version!;
+    }
+    if (args.safeDeploymentConfig!.isL1Safe) {
+      isL1Safe = true;
+    }
+  }
+
+  const chainId = getChainId({connection: args.connection});
+  const safeContractAddress = getSafeContractAddress(
+    safeContractVersion,
+    chainId.toString(),
+    !isL1Safe
+  );
+  const safeFactoryContractAddress = getSafeFactoryContractAddress(
+    safeContractVersion,
+    chainId.toString()
+  );
+  const initializer = encodeSetupCallData(args.safeAccountConfig);
+  Logger_Module.log({level: 0, message: "initializer " + initializer});
+
+  const salt = generateSalt(saltNonce, initializer);
+  if (salt.isErr) {
+    Logger_Module.log({level: 0, message: "salt error: " + salt.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "salt " + salt.unwrap()});
+
+  const initCode = getInitCode(safeFactoryContractAddress, safeContractAddress, connection);
+  if (initCode.isErr) {
+    Logger_Module.log({level: 0, message: "initCode error: " + initCode.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "initCode " + initCode.unwrap()});
+
+  let address = generateAddress2(
+    safeFactoryContractAddress,
+    salt.unwrap(),
+    initCode.unwrap(),
+  );
+  if (address.isErr) {
+    Logger_Module.log({level: 0, message: "address error: " + address.unwrapErr()});
+    return "";
+  }
+  Logger_Module.log({level: 0, message: "address " + address.unwrap()});
+
+  return address.unwrap();
 }
